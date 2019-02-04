@@ -11,7 +11,7 @@ https://www.coursera.org/specializations/deep-learning
 Run the main script by entering the following terminal command: 
 python main.py --content [content_image] --styles [style_image(s)] --base-width [image_base_width] --iterations [no_of_iterations] --checkpoint-iter [iterations_between_checkpoints]
 
-**Arguments:**
+**Base arguments:**
 
 - content - path to the image containing the content you wish to stylize
 - styles - path to the image or images containing the styles you wish to apply to your content image
@@ -22,6 +22,10 @@ python main.py --content [content_image] --styles [style_image(s)] --base-width 
 
 The code runs on tensorflow with gpu acceleration (might add an option to include cpu, otherwise modify the code a your leisure)
 
+Requires the vgg19 pretrained model, which can be found here:
+http://www.vlfeat.org/matconvnet/models/beta16/
+
 
 ** TO DO:**
+Add some example images
 Add more style customization
