@@ -1,11 +1,10 @@
-import os, sys
-import scipy.io
-import scipy.misc
-import matplotlib.pyplot as plt
-from matplotlib.pyplot import imshow
+import os
+import sys
 from PIL import Image
 import cv2
 import numpy as np
+import scipy.io
+import scipy.misc
 import tensorflow as tf
 
 MEANS = np.array([123.68, 116.779, 103.939]).reshape((1,1,1,3)) # Mean pixel values used for normalization

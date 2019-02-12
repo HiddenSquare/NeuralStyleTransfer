@@ -1,8 +1,8 @@
-import os, sys
+import os
+import sys
+import numpy as np
 import scipy.io
 import scipy.misc
-
-import numpy as np
 import tensorflow as tf
 
 class Builder:

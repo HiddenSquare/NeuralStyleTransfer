@@ -1,18 +1,17 @@
-import os, sys
+import os
+import sys
 from argparse import ArgumentParser
+import time
+import numpy as np
 import scipy.io
 import scipy.misc
-import matplotlib.pyplot as plt
-
 from PIL import Image
-import numpy as np
 import tensorflow as tf
 
+# Local scripts
 from optimizer import Optimizer
 from utils import Utils
 # import moviepy
-import time
-
 
 ITERATIONS = 1000
 CHECKPOINT_ITER = 200

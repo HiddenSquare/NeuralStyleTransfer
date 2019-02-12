@@ -1,15 +1,16 @@
-import os, sys
+import os
+import sys
 import time
 from argparse import ArgumentParser
+import numpy as np
 import scipy.io
 import scipy.misc
 import matplotlib.pyplot as plt
 
 from PIL import Image
-
-import numpy as np
 import tensorflow as tf
 
+# Local scripts
 from builder import Builder
 from utils import Utils
 
