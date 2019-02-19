@@ -19,6 +19,11 @@ python main.py --content [content_image] --styles [style_image(s)] --base-width 
 - iterations - the number of iterations you wish to run
 - checkpoint-iter - the number of iterations between each saved checkpoint image
 
+**Additional arguments:**
+- content-weight - Level of content image influence on generated image
+- style-weight - Level of style image influence on generated image
+- style-image-influence - [If more than one style image is added as input] Fraction representing influence on generated style for each image.
+- noise-ratio - Amount of random noise perturbation when initialising the generated image
 
 The code runs on tensorflow with gpu acceleration (might add an option to include cpu, otherwise modify the code a your leisure)
 
