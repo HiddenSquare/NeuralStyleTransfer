@@ -5,7 +5,6 @@ from argparse import ArgumentParser
 import numpy as np
 import scipy.io
 import scipy.misc
-import matplotlib.pyplot as plt
 
 from PIL import Image
 import tensorflow as tf
@@ -15,18 +14,36 @@ from builder import Builder
 from utils import Utils
 
 class Optimizer:
-    '''
-    Contains methods needed to perform the style transfer
-    '''
+    '''Sets up and performs the optimization of the neural style transfer model'''
 
-    def __init__(self, iterations, checkpoint_iter, style_image_influence, content_weight, style_weight, noise_ratio, content_image, style_images, model_path, save_path):
+    def __init__(self, 
+                iterations, 
+                checkpoint_iter,
+                style_image_influence,
+                eval_content_layers,
+                eval_style_layers, 
+                content_layer_influence,
+                style_layer_influence,  
+                content_weight, 
+                style_weight, 
+                noise_ratio, 
+                learning_rate, 
+                content_image, 
+                style_images, 
+                model_path, 
+                save_path):
 
         self.iterations = iterations
         self.checkpoint_iter = checkpoint_iter
         self.style_image_influence = style_image_influence
+        self.eval_content_layers = eval_content_layers
+        self.eval_style_layers = eval_style_layers
+        self.content_layer_influence = content_layer_influence
+        self.style_layer_influence = style_layer_influence
         self.content_weight = content_weight
         self.style_weight = style_weight
         self.noise_ratio = noise_ratio
+        self.learning_rate = learning_rate
 
         self.content_image = content_image
         self.style_images = style_images
@@ -40,11 +57,9 @@ class Optimizer:
         self.sess = tf.Session()
 
     def execute(self):
-        '''
-        Execute training of the style transfer model
-        '''
+        '''Execute training of the style transfer model'''
 
-        self.set_style_weight_distribution()
+        # self.set_layer_weight_distribution()
  
         tf.reset_default_graph()
         
@@ -61,25 +76,28 @@ class Optimizer:
             self.style_images[i] = self.utils.reshape_and_normalize_image(self.style_images[i])
 
         with tf.Session() as sess:
+            content_cost = 0
+            style_cost = 0
             # Assign the content image to be the input of the VGG model and run the image through the network
             sess.run(model['input'].assign(self.content_image))
 
             # Select the output tensor of layer conv4_2, corresponding to activations of selected layer
             # Choice of activation layer impacts detail of content in generated image
-            output_layer = "conv4_2"
-            out = model[output_layer]
+          
+            for i, content_layer in enumerate(self.eval_content_layers):
+                # out = model[output_layer]
+                eval_layer = model[content_layer]
 
-            # Get the activation from the selected layer when running the content image through the network
-            a_C = sess.run(out)
+                # Get the activation from the selected layer when running the content image through the network
+                a_C = sess.run(eval_layer)
 
-            # Save the hidden layer activation from same layer. a_G references model['conv4_2'] 
-            # and remains an unevalutated tensor.
-            a_G = out
+                # Save the hidden layer activation from same layer. a_G references model[content_layer[i]] 
+                # and remains an unevalutated tensor.
+                a_G = eval_layer
 
-            # Compute the content cost
-            content_cost = self.compute_content_cost(a_C, a_G)
+                # Compute the content cost
+                content_cost += self.compute_content_cost(a_C, a_G) * self.content_layer_influence[i]
 
-            style_cost = 0
             # Loop through all style images
             for i, style_image in enumerate(self.style_images):
                 # Load the model with the style image
@@ -106,14 +124,22 @@ class Optimizer:
             # generate_video_seq(image_list, out_file, 2)
     
     def model_nn(self, sess, model, input_image, total_cost, content_cost, style_cost, store_in_list = False):
-        '''
-        Model function
-        Inputs a session and input image
-        Generates a stylized image
+        '''Runs the style transfer model
+        
+        Arguments:
+        sess - tensorflow session
+        model - pretrained model (based on vgg19)
+        input_image - pregenerated image acting as a base for styling
+        total_cost - tensorflow graph defining the total cost calculation
+        content_cost - tensorflow graph defining the content cost calculation
+        style_cost - tensorflow graph defining the style cost calculation
+
+        Returns:
+        generated_image
         '''
 
         # define optimizer
-        optimizer = tf.train.AdamOptimizer(learning_rate=1)
+        optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
         train_step = optimizer.minimize(total_cost)
         
         # Initialize global variables (run the session on the initializer)
@@ -152,8 +178,7 @@ class Optimizer:
         return image_list if store_in_list else generated_image
 
     def compute_content_cost(self, a_C, a_G):
-        """
-        Computes the content cost
+        """Computes the content cost
         
         Arguments:
         a_C -- tensor of dimension (1, n_H, n_W, n_C), hidden layer activations representing content of the image C 
@@ -213,13 +238,13 @@ class Optimizer:
                             - a coefficient for each of them
         
         Returns: 
-        style_cost -- tensor representing a scalar value, style cost defined above by equation (2)
+        style_cost -- tensor representing a scalar value, weighted by each supplied style layer
         """
         
         # initialize the overall style cost
         style_cost = 0
 
-        for layer_name, coeff in self.style_layers:
+        for i, layer_name in enumerate(self.eval_style_layers):
 
             # Select the output tensor of the currently selected layer
             out = model[layer_name]
@@ -235,7 +260,7 @@ class Optimizer:
             # Compute style_cost for the current layer
             style_layer_cost = self.compute_layer_style_cost(a_S, a_G) 
             # Add coeff * J_style_layer of this layer to overall style cost
-            style_cost += coeff * style_layer_cost
+            style_cost += self.style_layer_influence[i] * style_layer_cost
 
         return style_cost
 
@@ -271,13 +296,13 @@ class Optimizer:
         
         return total_cost
 
-    def set_style_weight_distribution(self, weights=[1,1,1,1,1]):
+    def set_style_weight_distribution(self, style_weights=(1,1,1,1,1)):
         '''
         Define influence of the different convolutional layer on generated style
         '''
         self.style_layers = [
-        ('conv1_1', weights[0]),
-        ('conv2_1', weights[1]),
-        ('conv3_1', weights[2]),
-        ('conv4_1', weights[3]),
-        ('conv5_1', weights[4])]
+        ('conv1_1', style_weights[0]),
+        ('conv2_1', style_weights[1]),
+        ('conv3_1', style_weights[2]),
+        ('conv4_1', style_weights[3]),
+        ('conv5_1', style_weights[4])]

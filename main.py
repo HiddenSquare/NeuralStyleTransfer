@@ -18,48 +18,77 @@ CHECKPOINT_ITER = 200
 IMAGE_INFLUENCE = [1]
 CONTENT_WEIGHT = 5e0
 STYLE_WEIGHT = 5e2
+EVAL_CONTENT_LAYERS = ["conv4_2", "conv5_2"]
+EVAL_STYLE_LAYERS = ["conv1_1", "conv2_1", "conv3_1", "conv4_1", "conv5_1"]
+CONTENT_LAYER_INFLUENCE = None
+STYLE_LAYER_INFLUENCE = None
+LEARNING_RATE = 1e0
 NOISE_RATIO = 0.2
 
 def build_parser():
     parser = ArgumentParser(add_help=True)
     
-    parser.add_argument('--content',
-            dest='content', help='content image',
-            metavar='CONTENT', required=True)
+    parser.add_argument("-c", "--content",
+        dest="content", help="content image",
+        metavar="CONTENT", required=True)
     
-    parser.add_argument('--styles',
-            dest='styles',
-            nargs='+', help='one or more style images',
-            metavar='STYLE', required=True)
+    parser.add_argument("-s", "--styles",
+        dest="styles", nargs="+",
+        help="one or more style images",
+        metavar="STYLE", required=True)
         
-    parser.add_argument('--base-width', type=int,
-            dest='base_width', help='base width of image',
-            metavar='BASEWIDTH', required=True)           
+    parser.add_argument("-bw", "--base-width", type=int,
+        dest="base_width", help="base width of image",
+        metavar="BASEWIDTH", required=True)           
            
-    parser.add_argument('--iterations', type=int,
-            dest='iterations', help='iterations (default %(default)s)',
-            metavar='ITERATIONS', default=ITERATIONS)
+    parser.add_argument("-i", "--iterations", type=int,
+        dest="iterations", help="iterations (default %(default)s)",
+        metavar="ITERATIONS", default=ITERATIONS)
     
-    parser.add_argument('--checkpoint-iter', type=int,
-            dest='checkpoint_iter', help='number of iterations between each progress printout and image save',
-            metavar='CHECKPOINT_ITER', default=CHECKPOINT_ITER)
+    parser.add_argument("-ci", "--checkpoint-iter", type=int,
+        dest="checkpoint_iter", help="number of iterations between each progress printout and image save",
+        metavar="CHECKPOINT_ITER", default=CHECKPOINT_ITER)
             
-    parser.add_argument('--content-weight', type=float,
-            dest='content_weight', help='content weight value',
-            metavar='CONTENT_WEIGHT', default=CONTENT_WEIGHT)
+    parser.add_argument("-cw", "--content-weight", type=float,
+        dest="content_weight", help="content weight value",
+        metavar="CONTENT_WEIGHT", default=CONTENT_WEIGHT)
     
-    parser.add_argument('--style-weight', type=float,
-            dest='style_weight', help='style weight value',
-            metavar='STYLE_WEIGHT', default=STYLE_WEIGHT)
+    parser.add_argument("-sw", "--style-weight", type=float,
+        dest="style_weight", help="style weight value",
+        metavar="STYLE_WEIGHT", default=STYLE_WEIGHT)
             
-    parser.add_argument('--style-image-influence', type=float,
-            dest='style_image_influence',
-            nargs='+', help='if using several style images. fraction representing image influence on style, one value  for each style image',
-            metavar='IMAGE_INFLUENCE', default=IMAGE_INFLUENCE)
-            
-    parser.add_argument('--noise-ratio', type=float,
-            dest='noise_ratio', help='Amount of random noise perturbation when initialising generated image',
-            metavar='NOISE_RATIO', default=NOISE_RATIO)
+    parser.add_argument("-sii", "--style-image-influence", type=float,
+        dest="style_image_influence", nargs="+",
+        help="if using several style images. fraction representing image influence on style, one value  for each style image",
+        metavar="IMAGE_INFLUENCE", default=IMAGE_INFLUENCE)
+    
+    parser.add_argument("-ecl", "--eval-content-layers", type=str,
+        dest="eval_content_layers", nargs="+",
+        help="Choose which of the VGG19 that will be used when evaluating content loss",
+        default=EVAL_CONTENT_LAYERS)
+
+    parser.add_argument("-esl", "--eval-style-layers", type=str,
+        dest="eval_style_layers", nargs="+",
+        help="Choose which of the VGG19 that will be used when evaluating style loss",
+        default=EVAL_STYLE_LAYERS)
+
+    parser.add_argument("-cli", "--content-layer-influence", type=float,
+        dest="content_layer_influence", nargs="+",
+        help="Influence of each selected content layer on content loss",
+        default=CONTENT_LAYER_INFLUENCE)
+
+    parser.add_argument("-sli", "--style-layer-influence", type=float,
+        dest="style_layer_influence", nargs="+",
+        help="Influence of each selected style layer on style loss",
+        default=STYLE_LAYER_INFLUENCE)
+
+    parser.add_argument("-lr", "--learning-rate", type=float,
+        dest="learning_rate", help="Optimizer learning rate, governs how quickly style updates are propagated in the generated image ",
+        metavar="LEARNING_RATE", default=LEARNING_RATE)
+
+    parser.add_argument("-nr", "--noise-ratio", type=float,
+        dest="noise_ratio", help="Amount of random noise perturbation when initialising generated image",
+        metavar="NOISE_RATIO", default=NOISE_RATIO)
            
        
     return parser
@@ -91,21 +120,36 @@ def main():
 
     # Verify that content and style images are of the same size    
     assert style_images[0].shape == content_image.shape, "Dimensions of style image(s) and content images do not match! shapes: {}, {}".format(style_images[0].shape, content_image.shape)
-       
 
-    # Instanciate the optimizer
+    # Check if influence factor exists for each content and style layer. If that is not the case, reset influence to default list of ones.
+    if options.content_layer_influence is None or (options.content_layer_influence is not None and len(options.eval_content_layers) != len(options.content_layer_influence)):
+        content_layer_influence = [1 for x in options.eval_content_layers]
+    else:
+        content_layer_influence = options.content_layer_influence
+
+    if options.style_layer_influence is None or (options.style_layer_influence is not None and len(options.eval_style_layers) != len(options.style_layer_influence)):
+        style_layer_influence = [1 for x in options.eval_style_layers]
+    else:
+        style_layer_influence = options.style_layer_influence
+        
+    # Instantiate the optimizer
     optimizer = Optimizer(iterations=options.iterations, 
-                        checkpoint_iter=options.checkpoint_iter, 
+                        checkpoint_iter=options.checkpoint_iter,
                         style_image_influence=options.style_image_influence, 
+                        eval_content_layers=options.eval_content_layers,
+                        eval_style_layers=options.eval_style_layers,
+                        content_layer_influence=content_layer_influence,
+                        style_layer_influence=style_layer_influence,
                         content_weight=options.content_weight, 
                         style_weight=options.style_weight,
                         noise_ratio=options.noise_ratio,
+                        learning_rate=options.learning_rate,
                         content_image=content_image,
                         style_images=style_images,
                         model_path=MODEL_PATH,
                         save_path=SAVE_PATH
                         )
-    
+  
     # Execute optimizer
     optimizer.execute()
 
