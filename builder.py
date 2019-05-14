@@ -65,10 +65,12 @@ class Builder:
         Return the weights and bias from the VGG model for a given layer.
         layer_idx - integer representing index of layer in the vgg model from which to extract weights
         """
-        wb = self.vgg_layers[0][layer_idx][0][0][2]
+        # wb = self.vgg_layers[0][layer_idx][0][0][2] # based on old vgg-model shape
+        wb = self.vgg_layers[0][layer_idx][0][0][0]
         W = wb[0][0]
         b = wb[0][1]
-        layer_name = self.vgg_layers[0][layer_idx][0][0][0][0]
+        # layer_name = self.vgg_layers[0][layer_idx][0][0][0][0] # based on old vgg-model shape
+        layer_name = self.vgg_layers[0][layer_idx][0][0][3][0]
         assert layer_name == expected_layer_name
 
         return W, b

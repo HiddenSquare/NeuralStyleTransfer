@@ -1,0 +1,29 @@
+{
+  "content_url": "https://cdn.pariscityvision.com/media/wysiwyg/tour-eiffel.jpg",
+  "style_url": [
+    "https://i.vimeocdn.com/video/455373960_1280x720.jpg"
+  ],
+  "mod_aspect_ratio": 1,
+  "base_width": 400,
+  "iterations": 500,
+  "checkpoint_iter": 100,
+  "content_weight": 5,
+  "style_weight": 500,
+  "style_image_influence": [
+    1
+  ],
+  "eval_content_layers": 
+    ["conv4_2", "conv5_2"]
+  ,
+  "eval_style_layers": [
+"conv1_1", "conv2_1", "conv3_1", "conv4_1", "conv5_1"
+],
+  "content_layer_influence": [
+    0
+  ],
+  "style_layer_influence": [
+    0
+  ],
+  "learning_rate": 1,
+  "noise_ratio": 0.2
+}

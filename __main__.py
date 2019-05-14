@@ -15,7 +15,7 @@ from utils import Utils
 
 ITERATIONS = 1000
 CHECKPOINT_ITER = 200
-IMAGE_INFLUENCE = [1]
+STYLE_IMAGE_INFLUENCE = [1]
 CONTENT_WEIGHT = 5e0
 STYLE_WEIGHT = 5e2
 EVAL_CONTENT_LAYERS = ["conv4_2", "conv5_2"]
@@ -60,7 +60,7 @@ def build_parser():
     parser.add_argument("-sii", "--style-image-influence", type=float,
         dest="style_image_influence", nargs="+",
         help="if using several style images. fraction representing image influence on style, one value  for each style image",
-        metavar="IMAGE_INFLUENCE", default=IMAGE_INFLUENCE)
+        metavar="STYLE_IMAGE_INFLUENCE", default=STYLE_IMAGE_INFLUENCE)
     
     parser.add_argument("-ecl", "--eval-content-layers", type=str,
         dest="eval_content_layers", nargs="+",
@@ -95,6 +95,8 @@ def build_parser():
 
 MODEL_PATH = "./model/imagenet-vgg-verydeep-19.mat"
 SAVE_PATH = "./output/"
+if not os.path.isdir(SAVE_PATH):
+    os.mkdir(SAVE_PATH)
 MOD_ASPECT_RATIO = 1
 
 
@@ -108,29 +110,32 @@ def main():
     assert sum(options.style_image_influence) == 1, 'Weights do not add up to 1'   
 
     # Load content image
-    content_image_base = scipy.misc.imread(options.content)
+    # content_image_base = scipy.misc.imread(options.content)
 
-    # Resize image to fit model
-    content_image =  Utils().resize_image(content_image_base, options.base_width, MOD_ASPECT_RATIO)
+    # # Resize image to fit model
+    # content_image =  Utils().resize_image(content_image_base, options.base_width, MOD_ASPECT_RATIO)
 
-    style_images = []
-    for style_fname in options.styles:
-        style_image_base = scipy.misc.imread(style_fname)
-        style_images.append(Utils().resize_image(style_image_base, options.base_width, MOD_ASPECT_RATIO, target_shape = content_image.shape))
+    # style_images = []
+    # for style_fname in options.styles:
+    #     style_image_base = scipy.misc.imread(style_fname)
+    #     style_images.append(Utils().resize_image(style_image_base, options.base_width, MOD_ASPECT_RATIO, target_shape = content_image.shape))
 
-    # Verify that content and style images are of the same size    
-    assert style_images[0].shape == content_image.shape, "Dimensions of style image(s) and content images do not match! shapes: {}, {}".format(style_images[0].shape, content_image.shape)
+    # # Verify that content and style images are of the same size    
+    # assert style_images[0].shape == content_image.shape, "Dimensions of style image(s) and content images do not match! shapes: {}, {}".format(style_images[0].shape, content_image.shape)
 
-    # Check if influence factor exists for each content and style layer. If that is not the case, reset influence to default list of ones.
-    if options.content_layer_influence is None or (options.content_layer_influence is not None and len(options.eval_content_layers) != len(options.content_layer_influence)):
-        content_layer_influence = [1 for x in options.eval_content_layers]
-    else:
-        content_layer_influence = options.content_layer_influence
+    # Get images from local source
+    content_image, style_images = ReadImage(options.base_width, MOD_ASPECT_RATIO).read_local(options.content, options.styles)
 
-    if options.style_layer_influence is None or (options.style_layer_influence is not None and len(options.eval_style_layers) != len(options.style_layer_influence)):
-        style_layer_influence = [1 for x in options.eval_style_layers]
-    else:
-        style_layer_influence = options.style_layer_influence
+    # # Check if influence factor exists for each content and style layer. If that is not the case, reset influence to default list of ones.
+    # if options.content_layer_influence is None or (options.content_layer_influence is not None and len(options.eval_content_layers) != len(options.content_layer_influence)):
+    #     content_layer_influence = [1 for x in options.eval_content_layers]
+    # else:
+    #     content_layer_influence = options.content_layer_influence
+
+    # if options.style_layer_influence is None or (options.style_layer_influence is not None and len(options.eval_style_layers) != len(options.style_layer_influence)):
+    #     style_layer_influence = [1 for x in options.eval_style_layers]
+    # else:
+    #     style_layer_influence = options.style_layer_influence
         
     # Instantiate the optimizer
     optimizer = Optimizer(iterations=options.iterations, 
@@ -138,8 +143,6 @@ def main():
                         style_image_influence=options.style_image_influence, 
                         eval_content_layers=options.eval_content_layers,
                         eval_style_layers=options.eval_style_layers,
-                        content_layer_influence=content_layer_influence,
-                        style_layer_influence=style_layer_influence,
                         content_weight=options.content_weight, 
                         style_weight=options.style_weight,
                         noise_ratio=options.noise_ratio,
@@ -147,7 +150,9 @@ def main():
                         content_image=content_image,
                         style_images=style_images,
                         model_path=MODEL_PATH,
-                        save_path=SAVE_PATH
+                        save_path=SAVE_PATH,
+                        content_layer_influence=options.content_layer_influence,
+                        style_layer_influence=options.style_layer_influence
                         )
   
     # Execute optimizer

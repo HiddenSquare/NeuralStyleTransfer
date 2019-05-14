@@ -1,0 +1,1 @@
+python 3.6.0 gets dll error when importing tensorflow > 1.8.0 with protobuf > 3.6.0

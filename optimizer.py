@@ -21,9 +21,7 @@ class Optimizer:
                 checkpoint_iter,
                 style_image_influence,
                 eval_content_layers,
-                eval_style_layers, 
-                content_layer_influence,
-                style_layer_influence,  
+                eval_style_layers,
                 content_weight, 
                 style_weight, 
                 noise_ratio, 
@@ -31,15 +29,16 @@ class Optimizer:
                 content_image, 
                 style_images, 
                 model_path, 
-                save_path):
+                save_path,
+                content_layer_influence=None,
+                style_layer_influence=None
+                ):
 
         self.iterations = iterations
         self.checkpoint_iter = checkpoint_iter
         self.style_image_influence = style_image_influence
         self.eval_content_layers = eval_content_layers
         self.eval_style_layers = eval_style_layers
-        self.content_layer_influence = content_layer_influence
-        self.style_layer_influence = style_layer_influence
         self.content_weight = content_weight
         self.style_weight = style_weight
         self.noise_ratio = noise_ratio
@@ -55,6 +54,17 @@ class Optimizer:
         self.utils = Utils()
 
         self.sess = tf.Session()
+
+        # Check if influence factor exists for each content and style layer. If that is not the case, reset influence to default list of ones.
+        if content_layer_influence is None or (content_layer_influence is not None and len(eval_content_layers) != len(content_layer_influence)):
+            self.content_layer_influence = [1 for x in eval_content_layers]
+        else:
+            self.content_layer_influence = content_layer_influence
+            
+        if style_layer_influence is None or (style_layer_influence is not None and len(eval_style_layers) != len(style_layer_influence)):
+            self.style_layer_influence = [1 for x in eval_style_layers]
+        else:
+            self.style_layer_influence = style_layer_influence
 
     def execute(self):
         '''Execute training of the style transfer model'''

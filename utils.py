@@ -53,6 +53,7 @@ class Utils:
             new_width = target_shape[1]
             new_height = target_shape[0]
             
+        print(new_width, new_height)
         # resize image
         image_resized = cv2.resize(image, (new_width, new_height), interpolation = cv2.INTER_NEAREST)
         
