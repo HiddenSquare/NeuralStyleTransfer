@@ -11,6 +11,8 @@ https://www.coursera.org/specializations/deep-learning
 Run the main script by entering the following terminal command: 
 python main.py --content [content_image] --styles [style_image(s)] --base-width [image_base_width] --iterations [no_of_iterations] --checkpoint-iter [iterations_between_checkpoints]
 
+running app.py sets up a rest-api using flask, which takes image inputs as urls instead of local paths
+
 **Base arguments:**
 
 - content - path to the image containing the content you wish to stylize
@@ -23,6 +25,11 @@ python main.py --content [content_image] --styles [style_image(s)] --base-width 
 - content-weight - Level of content image influence on generated image
 - style-weight - Level of style image influence on generated image
 - style-image-influence - [If more than one style image is added as input] Fraction representing influence on generated style for each image.
+- eval-content-layers - choose which layers in the vgg19 model to use when evaluating content loss
+- eval-style-layers - choose which layers in the vgg19 model to use when evaluating style loss
+- content-layer-influence - set influence factor of each evaluated content layer [number of values needs to be equal to the number of layers evaluated]
+- style-layer-influence - set influence factor of each evaluated style layer [number of values needs to be equal to the number of layers evaluated]
+- learning-rate - set the optimizer learning rate
 - noise-ratio - Amount of random noise perturbation when initialising the generated image
 
 The code runs on tensorflow with gpu acceleration (might add an option to include cpu, otherwise modify the code a your leisure)
@@ -32,5 +39,6 @@ http://www.vlfeat.org/matconvnet/models/beta16/
 
 
 ** TO DO:**
-Add some example images
-Add more style customization
+- Add some example images
+- Add more style customization
+- Add docker creation script for model deployment
