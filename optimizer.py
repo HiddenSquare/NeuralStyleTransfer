@@ -169,7 +169,7 @@ class Optimizer:
                 generated_image = sess.run(model["input"])
 
             # Print progress as specified by checkpoint_iter (default 200)
-                if i % self.checkpoint_iter == 0:
+                if self.checkpoint_iter > 0 and i % self.checkpoint_iter == 0:
                     Jt, Jc, Js = sess.run([total_cost, content_cost, style_cost])
                     print("Iteration " + str(i) + " :")
                     print("total cost = " + str(Jt))
@@ -227,7 +227,7 @@ class Optimizer:
         a_S = tf.transpose(tf.reshape(a_S, [n_H*n_W, n_C]))
         a_G = tf.transpose(tf.reshape(a_G, [n_H*n_W, n_C]))
 
-        # Computing gram_matrices for both images S and G (Gram matrix = dot product of matrix and its transpose)
+        # Compute gram_matrices for both images S and G
         GS = self.gram_matrix(a_S)
  
         GG = self.gram_matrix(a_G)
@@ -259,16 +259,15 @@ class Optimizer:
             # Select the output tensor of the currently selected layer
             out = model[layer_name]
 
-            # Set a_S to be the hidden layer activation from the layer we have selected, by running the session on out
+            # Set a_S to be the hidden layer activation from the layer we have selected
             a_S = sess.run(out)
 
-            # Set a_G to be the hidden layer activation from same layer. Here, a_G references model[layer_name] 
-            # and isn't evaluated yet. Later in the code, we'll assign the image G as the model input, so that
-            # when we run the session, this will be the activations drawn from the appropriate layer, with G as input.
+            # Set a_G to be the hidden layer activation from same layer.
             a_G = out
             
             # Compute style_cost for the current layer
-            style_layer_cost = self.compute_layer_style_cost(a_S, a_G) 
+            style_layer_cost = self.compute_layer_style_cost(a_S, a_G)
+
             # Add coeff * J_style_layer of this layer to overall style cost
             style_cost += self.style_layer_influence[i] * style_layer_cost
 

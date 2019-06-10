@@ -11,6 +11,7 @@ import tensorflow as tf
 # Local scripts
 from optimizer import Optimizer
 from utils import Utils
+from read_image import ReadImage
 # import moviepy
 
 ITERATIONS = 1000

@@ -24,7 +24,7 @@ class Builder:
         
 		"""
         vgg = scipy.io.loadmat(self.model_path)
-        self.vgg_layers = vgg['layers']
+        self.vgg_layers = vgg['layers'][0]
 
     # Constructs the graph model.
     def build_model_graph(self):
@@ -32,31 +32,39 @@ class Builder:
         graph = {}
         self.load_vgg_model()
 
-        # Declare input layer as trainable (tf.Variable)
         graph['input'] = tf.Variable(np.zeros((1, self.image_height, self.image_width, self.color_channels)), dtype = 'float32')
+        
+        x = graph['input']
+        target_layer = "pool5"
 
-        # Declare remaining layers in the graph using imported weights from vgg19 and storing them as tf.constant
-        graph['conv1_1']  = self._conv2d_relu(graph['input'], 0, 'conv1_1')
-        graph['conv1_2']  = self._conv2d_relu(graph['conv1_1'], 2, 'conv1_2')
-        graph['avgpool1'] = self._avgpool(graph['conv1_2'])
-        graph['conv2_1']  = self._conv2d_relu(graph['avgpool1'], 5, 'conv2_1')
-        graph['conv2_2']  = self._conv2d_relu(graph['conv2_1'], 7, 'conv2_2')
-        graph['avgpool2'] = self._avgpool(graph['conv2_2'])
-        graph['conv3_1']  = self._conv2d_relu(graph['avgpool2'], 10, 'conv3_1')
-        graph['conv3_2']  = self._conv2d_relu(graph['conv3_1'], 12, 'conv3_2')
-        graph['conv3_3']  = self._conv2d_relu(graph['conv3_2'], 14, 'conv3_3')
-        graph['conv3_4']  = self._conv2d_relu(graph['conv3_3'], 16, 'conv3_4')
-        graph['avgpool3'] = self._avgpool(graph['conv3_4'])
-        graph['conv4_1']  = self._conv2d_relu(graph['avgpool3'], 19, 'conv4_1')
-        graph['conv4_2']  = self._conv2d_relu(graph['conv4_1'], 21, 'conv4_2')
-        graph['conv4_3']  = self._conv2d_relu(graph['conv4_2'], 23, 'conv4_3')
-        graph['conv4_4']  = self._conv2d_relu(graph['conv4_3'], 25, 'conv4_4')
-        graph['avgpool4'] = self._avgpool(graph['conv4_4'])
-        graph['conv5_1']  = self._conv2d_relu(graph['avgpool4'], 28, 'conv5_1')
-        graph['conv5_2']  = self._conv2d_relu(graph['conv5_1'], 30, 'conv5_2')
-        graph['conv5_3']  = self._conv2d_relu(graph['conv5_2'], 32, 'conv5_3')
-        graph['conv5_4']  = self._conv2d_relu(graph['conv5_3'], 34, 'conv5_4')
-        graph['avgpool5'] = self._avgpool(graph['conv5_4'])
+        for layer_idx, layer in enumerate(self.vgg_layers):
+
+            # Get layer name and layer type
+            try:
+                layer_name_type = layer[0][0][2][0] # try if name is conv
+                if layer_name_type != "conv":
+                    layer_name_type = layer[0][0][3][0]#get pool name
+            except:
+                layer_name_type = layer[0][0][0][0]#get relu name
+
+            try:
+                layer_name = layer[0][0][3][0]
+                if layer_name[:4] != "conv":
+                    layer_name = layer[0][0][0][0]
+            except:
+                layer_name = layer[0][0][1][0]
+
+            # generate graph based on layer name
+            if layer_name_type == "conv":
+                graph[layer_name] = self._conv2d_relu(x, layer_idx, layer_name)
+                x = graph[layer_name]
+
+            elif layer_name_type == "pool":
+                graph[layer_name] = self._avgpool(x)
+                x = graph[layer_name]
+
+            if layer_name == target_layer:
+                break
 
         return graph
 
@@ -66,12 +74,13 @@ class Builder:
         layer_idx - integer representing index of layer in the vgg model from which to extract weights
         """
         # wb = self.vgg_layers[0][layer_idx][0][0][2] # based on old vgg-model shape
-        wb = self.vgg_layers[0][layer_idx][0][0][0]
+        wb = self.vgg_layers[layer_idx][0][0][0]
         W = wb[0][0]
         b = wb[0][1]
         # layer_name = self.vgg_layers[0][layer_idx][0][0][0][0] # based on old vgg-model shape
-        layer_name = self.vgg_layers[0][layer_idx][0][0][3][0]
-        assert layer_name == expected_layer_name
+        layer_name = self.vgg_layers[layer_idx][0][0][3][0]
+
+        # assert layer_name == expected_layer_name
 
         return W, b
 

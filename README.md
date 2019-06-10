@@ -39,6 +39,7 @@ http://www.vlfeat.org/matconvnet/models/beta16/
 
 
 ** TO DO:**
+- Update the VGG model generation routine
 - Add some example images
 - Add more style customization
 - Add docker creation script for model deployment
