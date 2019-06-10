@@ -94,7 +94,7 @@ def build_parser():
        
     return parser
 
-MODEL_PATH = "./model/imagenet-vgg-verydeep-19.mat"
+MODEL_PATH = "./model/imagenet-vgg-verydeep-19.mat" #could add this as argument
 SAVE_PATH = "./output/"
 if not os.path.isdir(SAVE_PATH):
     os.mkdir(SAVE_PATH)
@@ -110,34 +110,9 @@ def main():
     assert len(options.style_image_influence) == len(options.styles), 'Number of weights needs to match number of style images'
     assert sum(options.style_image_influence) == 1, 'Weights do not add up to 1'   
 
-    # Load content image
-    # content_image_base = scipy.misc.imread(options.content)
-
-    # # Resize image to fit model
-    # content_image =  Utils().resize_image(content_image_base, options.base_width, MOD_ASPECT_RATIO)
-
-    # style_images = []
-    # for style_fname in options.styles:
-    #     style_image_base = scipy.misc.imread(style_fname)
-    #     style_images.append(Utils().resize_image(style_image_base, options.base_width, MOD_ASPECT_RATIO, target_shape = content_image.shape))
-
-    # # Verify that content and style images are of the same size    
-    # assert style_images[0].shape == content_image.shape, "Dimensions of style image(s) and content images do not match! shapes: {}, {}".format(style_images[0].shape, content_image.shape)
-
     # Get images from local source
     content_image, style_images = ReadImage(options.base_width, MOD_ASPECT_RATIO).read_local(options.content, options.styles)
 
-    # # Check if influence factor exists for each content and style layer. If that is not the case, reset influence to default list of ones.
-    # if options.content_layer_influence is None or (options.content_layer_influence is not None and len(options.eval_content_layers) != len(options.content_layer_influence)):
-    #     content_layer_influence = [1 for x in options.eval_content_layers]
-    # else:
-    #     content_layer_influence = options.content_layer_influence
-
-    # if options.style_layer_influence is None or (options.style_layer_influence is not None and len(options.eval_style_layers) != len(options.style_layer_influence)):
-    #     style_layer_influence = [1 for x in options.eval_style_layers]
-    # else:
-    #     style_layer_influence = options.style_layer_influence
-        
     # Instantiate the optimizer
     optimizer = Optimizer(iterations=options.iterations, 
                         checkpoint_iter=options.checkpoint_iter,
