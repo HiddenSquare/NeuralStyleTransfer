@@ -43,3 +43,4 @@ http://www.vlfeat.org/matconvnet/models/beta16/
 - Add some example images
 - Add more style customization
 - Add docker creation script for model deployment
+- Implement logging
