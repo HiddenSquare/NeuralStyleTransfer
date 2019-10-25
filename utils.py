@@ -39,7 +39,6 @@ class Utils:
         scipy.misc.imsave(save_path, image)
 
 
-
     @staticmethod
     def resize_image(image, base_width, mod_aspect_ratio, target_shape=None):
 

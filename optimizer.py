@@ -44,6 +44,8 @@ class Optimizer:
         self.noise_ratio = noise_ratio
         self.learning_rate = learning_rate
 
+        self.total_variation_weight = 1e7
+
         self.content_image = content_image
         self.style_images = style_images
         
@@ -88,6 +90,7 @@ class Optimizer:
         with tf.Session() as sess:
             content_cost = 0
             style_cost = 0
+
             # Assign the content image to be the input of the VGG model and run the image through the network
             sess.run(model['input'].assign(self.content_image))
 
@@ -119,6 +122,7 @@ class Optimizer:
             
             # Declare the total cost variable
             total_cost = self.compute_total_cost(content_cost, style_cost)
+            total_cost += self.total_variation_weight * self.total_variation_loss(model["input"])
 
             # Run the model
             print("Running model..\n")
@@ -303,7 +307,18 @@ class Optimizer:
         
         total_cost = self.content_weight * content_cost + self.style_weight * style_cost
         
+
         return total_cost
+
+    @staticmethod
+    def total_variation_loss(image):
+        """Calculate total variation loss using difference in x and y directions, respectively
+        """
+        # Define 
+        x_delta = image[:,:,1:,:] - image[:,:,:-1,:]
+        y_delta = image[:,1:,:,:] - image[:,:-1,:,:]
+        return tf.reduce_mean(x_delta**2) + tf.reduce_mean(y_delta**2)
+
 
     def set_style_weight_distribution(self, style_weights=(1,1,1,1,1)):
         '''
